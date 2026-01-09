@@ -68,6 +68,9 @@ public final class TaskList implements Runnable {
             case "deadline":
                 deadline(commandRest[1]);
                 break;
+            case "today":
+                today();
+                break;
             case "help":
                 help();
                 break;
@@ -156,6 +159,23 @@ public final class TaskList implements Runnable {
         out.println();
     }
 
+    private void today() {
+        LocalDate todayDate = LocalDate.now();
+        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+            List<Task> todayTasks = project.getValue().stream()
+                    .filter(task -> task.getDeadline() != null && task.getDeadline().equals(todayDate)) //first checking Null to avoid NPE
+                    .toList();
+
+            if (!todayTasks.isEmpty()) {
+                out.println(project.getKey());
+                for (Task task : todayTasks) {
+                    String deadlineStr = task.getDeadline() != null ? " " + task.getDeadline().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) : "";
+                    out.printf("    [%c] %d: %s%s%n", (task.isDone() ? 'x' : ' '), task.getId(), task.getDescription(), deadlineStr);
+                }
+            }
+        }
+        out.println();
+    }
 
     private void help() {
         out.println("Commands:");
@@ -165,6 +185,7 @@ public final class TaskList implements Runnable {
         out.println("  check <task ID>");
         out.println("  uncheck <task ID>");
         out.println("  deadline <task ID> <dd-MM-yyyy>");
+        out.println("  today");
         out.println();
     }
 
