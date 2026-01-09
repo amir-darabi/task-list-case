@@ -94,6 +94,24 @@ public final class ApplicationTest {
         execute("quit");
     }
 
+    @Test
+    void it_sets_deadline_for_task() throws IOException {
+        execute("add project secrets");
+        execute("add task secrets Eat more donuts.");
+
+        execute("deadline 1 31-12-2025");
+
+        execute("show");
+        readLines(
+            "secrets",
+            "    [ ] 1: Eat more donuts. 31-12-2025",
+            ""
+        );
+
+        execute("quit");
+    }
+
+
     private void execute(String command) throws IOException {
         read(PROMPT);
         write(command);
