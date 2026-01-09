@@ -71,6 +71,9 @@ public final class TaskList implements Runnable {
             case "today":
                 today();
                 break;
+//            case "view-by-deadline":
+//                viewByDeadline();
+//                break;
             case "help":
                 help();
                 break;
@@ -177,6 +180,11 @@ public final class TaskList implements Runnable {
         out.println();
     }
 
+//    private void viewByDeadline() {
+//
+//    }
+
+
     private void help() {
         out.println("Commands:");
         out.println("  show");
@@ -186,6 +194,7 @@ public final class TaskList implements Runnable {
         out.println("  uncheck <task ID>");
         out.println("  deadline <task ID> <dd-MM-yyyy>");
         out.println("  today");
+        out.println("  view-by-deadline");
         out.println();
     }
 
