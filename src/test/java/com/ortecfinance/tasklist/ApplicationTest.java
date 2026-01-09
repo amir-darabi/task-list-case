@@ -111,6 +111,29 @@ public final class ApplicationTest {
         execute("quit");
     }
 
+    @Test
+    void it_shows_task_due_today_grouped_by_project() throws IOException {
+        String todayDate = java.time.LocalDate.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+
+        execute("add project secrets");
+        execute("add task secrets Eat more donuts.");
+        execute("deadline 1 " + todayDate);
+
+        execute("add project training");
+        execute("add task training Learn Java Streams.");
+        // no deadline for training task -> should NOT show in today output
+
+        execute("today");
+        readLines(
+                "secrets",
+                "    [ ] 1: Eat more donuts. " + todayDate,
+                ""
+        );
+
+        execute("quit");
+    }
+
 
     private void execute(String command) throws IOException {
         read(PROMPT);
