@@ -1,15 +1,14 @@
 package com.ortecfinance.tasklist;
 
+import org.springframework.cglib.core.Local;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class TaskList implements Runnable {
     private static final String QUIT = "quit";
@@ -71,9 +70,9 @@ public final class TaskList implements Runnable {
             case "today":
                 today();
                 break;
-//            case "view-by-deadline":
-//                viewByDeadline();
-//                break;
+            case "view-by-deadline":
+                viewByDeadline();
+                break;
             case "help":
                 help();
                 break;
@@ -180,9 +179,40 @@ public final class TaskList implements Runnable {
         out.println();
     }
 
-//    private void viewByDeadline() {
-//
-//    }
+    private void viewByDeadline() {
+        // Map: deadline -> list  of tasks    // TreeMap keep it sorted
+        Map<LocalDate , List<Task>> tasksByDeadline = new TreeMap<>();
+        List<Task> noDeadlineTasks = new ArrayList<>();
+
+        // Separate tasks by deadline
+        for (Map.Entry<String, List<Task>> project : tasks.entrySet() ) {
+            for (Task task : project.getValue()) {
+                if (task.getDeadline() == null) {
+                    noDeadlineTasks.add(task);
+                } else {
+                    // add task to takesByDeadline, if the key(deadline) does not exist, create new list for that key
+                    tasksByDeadline.computeIfAbsent(task.getDeadline(), k -> new ArrayList<>()).add(task);
+                }
+            }
+        }
+
+        // Print tasks grouped by deadline
+        for (Map.Entry<LocalDate, List<Task>> entry : tasksByDeadline.entrySet()) {
+            out.println(entry.getKey().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + ":");
+            for (Task task : entry.getValue()) {
+                out.printf("    %d: %s%n", task.getId(), task.getDescription());
+            }
+        }
+
+        // Print tasks with no deadlines
+        if (!noDeadlineTasks.isEmpty()) {
+            out.println("No deadline:");
+            for (Task task : noDeadlineTasks) {
+                out.printf("    %d: %s%n", task.getId(), task.getDescription());
+            }
+        }
+        out.println();
+    }
 
 
     private void help() {
