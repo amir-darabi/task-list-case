@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,6 +65,9 @@ public final class TaskList implements Runnable {
             case "uncheck":
                 uncheck(commandRest[1]);
                 break;
+            case "deadline":
+                deadline(commandRest[1]);
+                break;
             case "help":
                 help();
                 break;
@@ -76,7 +81,7 @@ public final class TaskList implements Runnable {
         for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
             out.println(project.getKey());
             for (Task task : project.getValue()) {
-                out.printf("    [%c] %d: %s%n", (task.isDone() ? 'x' : ' '), task.getId(), task.getDescription());
+                out.printf("    [%c] %d: %s%n ", (task.isDone() ? 'x' : ' '), task.getId(), task.getDescription());
             }
             out.println();
         }
@@ -116,6 +121,7 @@ public final class TaskList implements Runnable {
     }
 
     private void setDone(String idString, boolean done) {
+        // Change Later? int -> long
         int id = Integer.parseInt(idString);
         for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
             for (Task task : project.getValue()) {
@@ -129,6 +135,27 @@ public final class TaskList implements Runnable {
         out.println();
     }
 
+    private void deadline(String commandLine) {
+        String[] parts = commandLine.split(" ", 2);
+        //ADD LATER: if (parts.length < 2) { ... }
+
+        //ADD LATER: try and catch
+        long id = Long.parseLong(parts[0]);
+        LocalDate deadlineDate = LocalDate.parse(parts[1], DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        // Go through each task in each project
+        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+            for (Task task : project.getValue()) {
+                if (task.getId() == id) {
+                    task.setDeadline(deadlineDate);
+                    return;
+                }
+            }
+        }
+        out.printf("Could not find a task with an ID of %d.", id);
+        out.println();
+    }
+
+
     private void help() {
         out.println("Commands:");
         out.println("  show");
@@ -136,6 +163,7 @@ public final class TaskList implements Runnable {
         out.println("  add task <project name> <task description>");
         out.println("  check <task ID>");
         out.println("  uncheck <task ID>");
+        out.println("  deadline <task ID> <dd-MM-yyyy>");
         out.println();
     }
 
