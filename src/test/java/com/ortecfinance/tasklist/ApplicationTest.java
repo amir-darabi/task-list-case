@@ -135,7 +135,7 @@ public final class ApplicationTest {
     }
 
     @Test
-    void it_groups_tasks_by_deadline() throws IOException {
+    void it_groups_tasks_by_deadline_and_project() throws IOException {
         execute("add project secrets");
         execute("add task secrets Eat more donuts.");
         execute("add task secrets Destroy all humans.");
@@ -151,12 +151,16 @@ public final class ApplicationTest {
         execute("view-by-deadline");
         readLines(
                 "11-11-2025:",
-                "    1: Eat more donuts.",
-                "    3: Four Elements of Simple Design",
+                "    secrets:",
+                "        1: Eat more donuts.",
+                "    training:",
+                "        3: Four Elements of Simple Design",
                 "13-11-2025:",
-                "    4: Interaction-Driven Design",
+                "    training:",
+                "        4: Interaction-Driven Design",
                 "No deadline:",
-                "    2: Destroy all humans.",
+                "    secrets:",
+                "        2: Destroy all humans.",
                 ""
         );
 
