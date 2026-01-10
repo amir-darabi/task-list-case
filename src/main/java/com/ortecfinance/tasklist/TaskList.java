@@ -1,6 +1,9 @@
 package com.ortecfinance.tasklist;
 
+import com.fasterxml.jackson.databind.deser.CreatorProperty;
 import com.ortecfinance.tasklist.model.Task;
+import com.ortecfinance.tasklist.repository.InMemoryTaskRepository;
+import com.ortecfinance.tasklist.repository.TaskRepository;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -13,19 +16,19 @@ import java.util.*;
 public final class TaskList implements Runnable {
     private static final String QUIT = "quit";
 
-    private final Map<String, List<Task>> tasks = new LinkedHashMap<>();
+    private final TaskRepository repository;
     private final BufferedReader in;
     private final PrintWriter out;
-
-    private long lastId = 0;
 
     public static void startConsole() {
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter out = new PrintWriter(System.out);
-        new TaskList(in, out).run();
+        TaskRepository repository = new InMemoryTaskRepository();
+        new TaskList(repository, in, out).run();
     }
 
-    public TaskList(BufferedReader reader, PrintWriter writer) {
+    public TaskList(TaskRepository repository, BufferedReader reader, PrintWriter writer) {
+        this.repository = repository;
         this.in = reader;
         this.out = writer;
     }
@@ -83,7 +86,7 @@ public final class TaskList implements Runnable {
     }
 
     private void show() {
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+        for (Map.Entry<String, List<Task>> project : repository.getAllProjectsWithTasks().entrySet()) {
             out.println(project.getKey());
             for (Task task : project.getValue()) {
                 String deadlineStr = task.getDeadline() != null ? " " + task.getDeadline().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) : "";
@@ -105,17 +108,16 @@ public final class TaskList implements Runnable {
     }
 
     private void addProject(String name) {
-        tasks.put(name, new ArrayList<Task>());
+        repository.addProject(name);
     }
 
     private void addTask(String project, String description) {
-        List<Task> projectTasks = tasks.get(project);
-        if (projectTasks == null) {
+        if (!repository.hasProject(project)) {
             out.printf("Could not find a project with the name \"%s\".", project);
             out.println();
             return;
         }
-        projectTasks.add(new Task(nextId(), description, false));
+        repository.addTask(project, description);
     }
 
     private void check(String idString) {
@@ -127,18 +129,14 @@ public final class TaskList implements Runnable {
     }
 
     private void setDone(String idString, boolean done) {
-        // Change Later? int -> long
-        int id = Integer.parseInt(idString);
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
-            for (Task task : project.getValue()) {
-                if (task.getId() == id) {
-                    task.setDone(done);
-                    return;
-                }
-            }
+        long id = Integer.parseInt(idString);
+        Optional<Task> task = repository.findTaskById(id);
+        if (task.isPresent()) {
+            task.get().setDone(done);
+        } else {
+            out.printf("Could not find a task with an ID of %d.", id);
+            out.println();
         }
-        out.printf("Could not find a task with an ID of %d.", id);
-        out.println();
     }
 
     private void deadline(String commandLine) {
@@ -149,21 +147,18 @@ public final class TaskList implements Runnable {
         long id = Long.parseLong(parts[0]);
         LocalDate deadlineDate = LocalDate.parse(parts[1], DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         // Go through each task in each project
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
-            for (Task task : project.getValue()) {
-                if (task.getId() == id) {
-                    task.setDeadline(deadlineDate);
-                    return;
-                }
-            }
+        Optional<Task> task = repository.findTaskById(id);
+        if (task.isPresent()) {
+            task.get().setDeadline(deadlineDate);
+        } else {
+            out.printf("Could not find a task with an ID of %d.", id);
+            out.println();
         }
-        out.printf("Could not find a task with an ID of %d.", id);
-        out.println();
     }
 
     private void today() {
         LocalDate todayDate = LocalDate.now();
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet()) {
+        for (Map.Entry<String, List<Task>> project : repository.getAllProjectsWithTasks().entrySet()) {
             List<Task> todayTasks = project.getValue().stream()
                     .filter(task -> task.getDeadline() != null && task.getDeadline().equals(todayDate)) //first checking Null to avoid NPE
                     .toList();
@@ -187,7 +182,7 @@ public final class TaskList implements Runnable {
         Map<String, List<Task>> noDeadlineTasksByProject = new LinkedHashMap<>();
 
         // Separate tasks by deadline
-        for (Map.Entry<String, List<Task>> project : tasks.entrySet() ) {
+        for (Map.Entry<String, List<Task>> project : repository.getAllProjectsWithTasks().entrySet() ) {
             String projectName = project.getKey();
             for (Task task : project.getValue()) {
                 if (task.getDeadline() == null) {
@@ -243,7 +238,4 @@ public final class TaskList implements Runnable {
         out.println();
     }
 
-    private long nextId() {
-        return ++lastId;
-    }
 }
