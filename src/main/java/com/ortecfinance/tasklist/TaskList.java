@@ -1,6 +1,6 @@
 package com.ortecfinance.tasklist;
 
-import org.springframework.cglib.core.Local;
+import com.ortecfinance.tasklist.model.Task;
 
 import java.io.BufferedReader;
 import java.io.IOException;
