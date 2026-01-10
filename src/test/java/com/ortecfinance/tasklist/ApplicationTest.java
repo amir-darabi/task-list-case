@@ -134,6 +134,39 @@ public final class ApplicationTest {
         execute("quit");
     }
 
+    @Test
+    void it_groups_tasks_by_deadline_and_project() throws IOException {
+        execute("add project secrets");
+        execute("add task secrets Eat more donuts.");
+        execute("add task secrets Destroy all humans.");
+
+        execute("add project training");
+        execute("add task training Four Elements of Simple Design");
+        execute("add task training Interaction-Driven Design");
+
+        execute("deadline 1 11-11-2025");
+        execute("deadline 3 11-11-2025");
+        execute("deadline 4 13-11-2025");
+
+        execute("view-by-deadline");
+        readLines(
+                "11-11-2025:",
+                "    secrets:",
+                "        1: Eat more donuts.",
+                "    training:",
+                "        3: Four Elements of Simple Design",
+                "13-11-2025:",
+                "    training:",
+                "        4: Interaction-Driven Design",
+                "No deadline:",
+                "    secrets:",
+                "        2: Destroy all humans.",
+                ""
+        );
+
+        execute("quit");
+    }
+
 
     private void execute(String command) throws IOException {
         read(PROMPT);
