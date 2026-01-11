@@ -52,11 +52,9 @@ public final class TaskCLI implements Runnable {
                 case "show":
                     show();
                     break;
-
                 case "help":
                     help();
                     break;
-
                 case "add":
                     if (!hasArgs(commandRest)) {
                         printUsage("add project <project name> | add task <project name> <task description>");
@@ -64,7 +62,6 @@ public final class TaskCLI implements Runnable {
                     }
                     add(commandRest[1]);
                     break;
-
                 case "check":
                     if (!hasArgs(commandRest)) {
                         printUsage("check <task ID>");
@@ -72,7 +69,6 @@ public final class TaskCLI implements Runnable {
                     }
                     check(commandRest[1]);
                     break;
-
                 case "uncheck":
                     if (!hasArgs(commandRest)) {
                         printUsage("uncheck <task ID>");
@@ -80,7 +76,6 @@ public final class TaskCLI implements Runnable {
                     }
                     uncheck(commandRest[1]);
                     break;
-
                 case "deadline":
                     if (!hasArgs(commandRest)) {
                         printUsage("deadline <task ID> <dd-MM-yyyy>");
@@ -88,15 +83,12 @@ public final class TaskCLI implements Runnable {
                     }
                     setDeadline(commandRest[1]);
                     break;
-
                 case "today":
                     today();
                     break;
-
                 case "view-by-deadline":
                     viewByDeadline();
                     break;
-
                 default:
                     error(command);
                     break;
@@ -105,13 +97,10 @@ public final class TaskCLI implements Runnable {
         } catch (IllegalStateException e) {
             // Business rule errors from service (project not found, task not found)
             out.println(e.getMessage());
-
         } catch (NumberFormatException e) {
             out.println("Invalid number format.");
-
         } catch (java.time.format.DateTimeParseException e) {
             out.println("Invalid date. Expected format: dd-MM-yyyy.");
-
         } catch (Exception e) {
             out.println("Invalid command.");
         }
