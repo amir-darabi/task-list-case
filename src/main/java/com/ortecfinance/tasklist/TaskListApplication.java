@@ -6,6 +6,7 @@ import com.ortecfinance.tasklist.repository.TaskRepository;
 import com.ortecfinance.tasklist.service.TaskService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -21,7 +22,7 @@ public class TaskListApplication {
         }
         else {
             SpringApplication.run(TaskListApplication.class, args);
-            System.out.println("localhost:8080/tasks");
+            System.out.println("REST API started. Try: http://localhost:8080/projects");
         }
     }
 
@@ -33,5 +34,15 @@ public class TaskListApplication {
         TaskService service = new TaskService(repo);
 
         new TaskCLI(service, in, out).run();
+    }
+
+    @Bean
+    public TaskRepository taskRepository() {
+        return new InMemoryTaskRepository();
+    }
+
+    @Bean
+    public TaskService taskService(TaskRepository taskRepository) {
+        return new TaskService(taskRepository);
     }
  }
