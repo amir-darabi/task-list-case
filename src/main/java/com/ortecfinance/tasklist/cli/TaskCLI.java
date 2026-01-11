@@ -143,28 +143,29 @@ public final class TaskCLI implements Runnable {
 
 
     private void viewByDeadline() {
-        Map<LocalDate, Map<String, List<Task>>> grouped = service.getTasksByDeadline();
-
-        for (Map.Entry<LocalDate, Map<String, List<Task>>> entry : grouped.entrySet()) {
-            LocalDate date = entry.getKey();
-
-            if (date == null) {
-                out.println("No deadline:");
-            } else {
-                out.println(date.format(DATE_FORMAT) + ":");
-            }
-
-            Map<String, List<Task>> projects = entry.getValue();
-            for (Map.Entry<String, List<Task>> projectEntry : projects.entrySet()) {
-                out.println("    " + projectEntry.getKey() + ":");
-
-                for (Task task : projectEntry.getValue()) {
+        TaskService.DeadlineView view = service.getTasksByDeadline();
+        // Print tasks with deadlines
+        for (Map.Entry<LocalDate, Map<String, List<Task>>> entry : view.byDeadline.entrySet()) {
+            out.println(entry.getKey().format(DATE_FORMAT) + ":");
+            for (Map.Entry<String, List<Task>> project : entry.getValue().entrySet()) {
+                out.println("    " + project.getKey() + ":");
+                for (Task task : project.getValue()) {
                     out.printf("        %d: %s%n", task.getId(), task.getDescription());
                 }
             }
-
-            out.println();
         }
+
+        // Print tasks without deadlines
+        if (!view.noDeadline.isEmpty()) {
+            out.println("No deadline:");
+            for (Map.Entry<String, List<Task>> project : view.noDeadline.entrySet()) {
+                out.println("    " + project.getKey() + ":");
+                for (Task task : project.getValue()) {
+                    out.printf("        %d: %s%n", task.getId(), task.getDescription());
+                }
+            }
+        }
+        out.println();
     }
 
     private void help() {

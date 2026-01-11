@@ -1,6 +1,7 @@
 package com.ortecfinance.tasklist;
 
-import com.ortecfinance.tasklist.cli.TaskList;
+import com.ortecfinance.tasklist.cli.TaskCLI;
+import com.ortecfinance.tasklist.service.TaskService;
 import org.junit.jupiter.api.*;
 import java.io.*;
 
@@ -26,8 +27,10 @@ public final class ApplicationTest {
     public ApplicationTest() throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(new PipedInputStream(inStream)));
         PrintWriter out = new PrintWriter(new PipedOutputStream(outStream), true);
-        TaskList taskList = new TaskList(repository,in, out);
-        applicationThread = new Thread(taskList);
+
+        TaskService service = new TaskService(repository);
+        TaskCLI cli = new TaskCLI(service,in, out);
+        applicationThread = new Thread(cli);
     }
 
     @BeforeEach

@@ -50,33 +50,40 @@ public class TaskService {
         return repository.getAllProjectsWithTasks();
     }
 
-    public Map<LocalDate, Map<String, List<Task>>> getTasksByDeadline() {
-        //for tasks with deadline: deadline -> (project -> tasks )
-        Map<LocalDate, Map<String, List<Task>>> tasksByDeadlineAndProject = new TreeMap<>();
-        //for tasks with no deadline: project -> tasks
-        Map<String, List<Task>> noDeadlineTasksByProject = new LinkedHashMap<>();
+    // DTO for transferring deadline viewdata
+    public class DeadlineView {
+        public final Map<LocalDate, Map<String, List<Task>>> byDeadline;
+        public final Map<String, List<Task>> noDeadline;
 
-        // Separate tasks by deadline
+        public DeadlineView(
+                Map<LocalDate, Map<String, List<Task>>> byDeadline,
+                Map<String, List<Task>> noDeadline
+        ) {
+            this.byDeadline = byDeadline;
+            this.noDeadline = noDeadline;
+        }
+    }
+
+    public DeadlineView getTasksByDeadline() {
+        Map<LocalDate, Map<String, List<Task>>> byDeadline = new TreeMap<>();
+        Map<String, List<Task>> noDeadline = new LinkedHashMap<>();
+
         for (Map.Entry<String, List<Task>> project : repository.getAllProjectsWithTasks().entrySet()) {
             String projectName = project.getKey();
             for (Task task : project.getValue()) {
                 if (task.getDeadline() == null) {
-                    noDeadlineTasksByProject.computeIfAbsent(projectName, k -> new ArrayList<>()).add(task);
+                    noDeadline
+                            .computeIfAbsent(projectName, k -> new ArrayList<>())
+                            .add(task);
                 } else {
-                    tasksByDeadlineAndProject
+                    byDeadline
                             .computeIfAbsent(task.getDeadline(), k -> new LinkedHashMap<>())
                             .computeIfAbsent(projectName, k -> new ArrayList<>())
                             .add(task);
                 }
             }
         }
-
-        // Add no deadline tasks at the end
-        if (!noDeadlineTasksByProject.isEmpty()) {
-            tasksByDeadlineAndProject.put(null, noDeadlineTasksByProject);
-        }
-
-        return tasksByDeadlineAndProject;
+        return new DeadlineView(byDeadline, noDeadline);
     }
 
     public Map<String, List<Task>> getTodaysTasks() {
@@ -87,14 +94,10 @@ public class TaskService {
             List<Task> tasksForToday = project.getValue().stream()
                     .filter(task -> task.getDeadline() != null && task.getDeadline().equals(todayDate))
                     .toList();
-
             if (!tasksForToday.isEmpty()) {
                 todayTasks.put(project.getKey(), tasksForToday);
             }
         }
-
         return todayTasks;
     }
-
-
 }
