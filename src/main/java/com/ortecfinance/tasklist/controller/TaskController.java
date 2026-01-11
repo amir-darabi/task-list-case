@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -22,6 +24,8 @@ public class TaskController {
     public TaskController(TaskService service) {
         this.service = service;
     }
+
+    private static final DateTimeFormatter DEADLINE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     // POST /projects
     @PostMapping
@@ -56,6 +60,23 @@ public class TaskController {
         service.addTask(projectId, description);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    // PUT /projects/{projectId}/tasks/{taskId}?deadline=dd-MM-yyyy
+    @PutMapping("/{projectId}/tasks/{taskId}")
+    public ResponseEntity<Void> updateTaskDeadline(
+            @PathVariable String projectId,
+            @PathVariable long taskId,
+            @RequestParam("deadline") String deadline
+    ) {
+        //projectId is currently not used because tasks are looked up by ID
+        log.info("PUT /projects/{}/tasks/{} deadline={}", projectId, taskId, deadline);
+
+        LocalDate date = LocalDate.parse(deadline, DEADLINE_FORMATTER);
+        service.setTaskDeadline(taskId, date);
+
+        return ResponseEntity.noContent().build();
+    }
+
 
 
     public record CreateProjectRequest(String name) {}
