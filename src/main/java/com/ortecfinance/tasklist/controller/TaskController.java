@@ -8,10 +8,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/projects")
 public class TaskController {
+
+    private static final Logger log = LoggerFactory.getLogger(TaskController.class);
 
     private final TaskService service;
 
@@ -22,6 +26,7 @@ public class TaskController {
     // POST /projects
     @PostMapping
     public ResponseEntity<Void> createProject(@RequestBody CreateProjectRequest request) {
+        log.info("POST /projects name={}", request == null ? null : request.name());
         service.addProject(request.name());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -29,7 +34,9 @@ public class TaskController {
     // GET /projects
     @GetMapping
     public Map<String, List<Task>> getProjects() {
-        return service.getAllProjectsWithTasks();
+        var projects = service.getAllProjectsWithTasks();
+        log.info("GET /projects -> {} project(s)", projects.size());
+        return projects;
     }
 
     public record CreateProjectRequest(String name) {}
