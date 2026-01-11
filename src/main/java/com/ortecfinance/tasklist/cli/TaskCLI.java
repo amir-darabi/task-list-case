@@ -11,9 +11,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
-
-
-
 public final class TaskCLI implements Runnable {
     private static final String QUIT = "quit";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy");
@@ -50,37 +47,76 @@ public final class TaskCLI implements Runnable {
         String[] commandRest = commandLine.split(" ", 2);
         String command = commandRest[0];
 
-        // ADD Later: try-catch block to handle exceptions from service layer
-        switch (command) {
-            case "show":
-                show();
-                break;
-            case "add":
-                add(commandRest[1]);
-                break;
-            case "check":
-                check(commandRest[1]);
-                break;
-            case "uncheck":
-                uncheck(commandRest[1]);
-                break;
-            case "deadline":
-                setDeadline(commandRest[1]);
-                break;
-            case "today":
-                today();
-                break;
-            case "view-by-deadline":
-                viewByDeadline();
-                break;
-            case "help":
-                help();
-                break;
-            default:
-                error(command);
-                break;
+        try {
+            switch (command) {
+                case "show":
+                    show();
+                    break;
+
+                case "help":
+                    help();
+                    break;
+
+                case "add":
+                    if (!hasArgs(commandRest)) {
+                        printUsage("add project <project name> | add task <project name> <task description>");
+                        break;
+                    }
+                    add(commandRest[1]);
+                    break;
+
+                case "check":
+                    if (!hasArgs(commandRest)) {
+                        printUsage("check <task ID>");
+                        break;
+                    }
+                    check(commandRest[1]);
+                    break;
+
+                case "uncheck":
+                    if (!hasArgs(commandRest)) {
+                        printUsage("uncheck <task ID>");
+                        break;
+                    }
+                    uncheck(commandRest[1]);
+                    break;
+
+                case "deadline":
+                    if (!hasArgs(commandRest)) {
+                        printUsage("deadline <task ID> <dd-MM-yyyy>");
+                        break;
+                    }
+                    setDeadline(commandRest[1]);
+                    break;
+
+                case "today":
+                    today();
+                    break;
+
+                case "view-by-deadline":
+                    viewByDeadline();
+                    break;
+
+                default:
+                    error(command);
+                    break;
+            }
+
+        } catch (IllegalStateException e) {
+            // Business rule errors from service (project not found, task not found)
+            out.println(e.getMessage());
+
+        } catch (NumberFormatException e) {
+            out.println("Invalid number format.");
+
+        } catch (java.time.format.DateTimeParseException e) {
+            out.println("Invalid date. Expected format: dd-MM-yyyy.");
+
+        } catch (Exception e) {
+            out.println("Invalid command.");
         }
     }
+
 
     private void show() {
         for (Map.Entry<String, List<Task>> project : service.getAllProjectsWithTasks().entrySet()) {
@@ -98,12 +134,29 @@ public final class TaskCLI implements Runnable {
         String subcommand = subcommandRest[0];
 
         if (subcommand.equals("project")) {
+            if (subcommandRest.length < 2 || subcommandRest[1].isBlank()) {
+                printUsage("add project <project name>");
+                return;
+            }
             service.addProject(subcommandRest[1]);
+
         } else if (subcommand.equals("task")) {
+            if (subcommandRest.length < 2 || subcommandRest[1].isBlank()) {
+                printUsage("add task <project name> <task description>");
+                return;
+            }
             String[] projectTask = subcommandRest[1].split(" ", 2);
+            if (projectTask.length < 2 || projectTask[1].isBlank()) {
+                printUsage("add task <project name> <task description>");
+                return;
+            }
             service.addTask(projectTask[0], projectTask[1]);
+
+        } else {
+            printUsage("add project <project name> OR add task <project name> <task description>");
         }
     }
+
 
     private void check(String idString) {
         long id = Long.parseLong(idString);
@@ -117,6 +170,11 @@ public final class TaskCLI implements Runnable {
 
     private void setDeadline(String args) {
         String[] parts = args.split(" ", 2);
+        if (parts.length < 2 || parts[1].isBlank()) {
+            printUsage("deadline <task ID> <dd-MM-yyyy>");
+            return;
+        }
+
         long id = Long.parseLong(parts[0]);
         LocalDate date = LocalDate.parse(parts[1], DATE_FORMAT);
 
@@ -140,7 +198,6 @@ public final class TaskCLI implements Runnable {
             out.println();
         }
     }
-
 
     private void viewByDeadline() {
         TaskService.DeadlineView view = service.getTasksByDeadline();
@@ -185,5 +242,14 @@ public final class TaskCLI implements Runnable {
         out.printf("I don't know what the command \"%s\" is.", command);
         out.println();
     }
+
+    private boolean hasArgs(String[] commandRest) {
+        return commandRest.length == 2 && commandRest[1] != null && !commandRest[1].isBlank();
+    }
+
+    private void printUsage(String usage) {
+        out.println("Usage: " + usage);
+    }
+
 
 }
