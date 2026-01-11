@@ -77,7 +77,13 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
-
+    // GET /projects/view_by_deadline
+    @GetMapping("/view_by_deadline")
+    public TaskService.DeadlineView viewByDeadline() {
+        var view = service.getTasksByDeadline();
+        log.info("GET /projects/view_by_deadline");
+        return view;
+    }
 
     public record CreateProjectRequest(String name) {}
     public record CreateTaskRequest(String description) {}
