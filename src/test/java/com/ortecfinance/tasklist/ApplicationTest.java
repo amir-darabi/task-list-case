@@ -1,12 +1,16 @@
 package com.ortecfinance.tasklist;
 
+import com.ortecfinance.tasklist.cli.TaskCLI;
+import com.ortecfinance.tasklist.service.TaskService;
 import org.junit.jupiter.api.*;
-
 import java.io.*;
 
 import static java.lang.System.lineSeparator;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+
+import com.ortecfinance.tasklist.repository.InMemoryTaskRepository;
+import com.ortecfinance.tasklist.repository.TaskRepository;
 
 public final class ApplicationTest {
     public static final String PROMPT = "> ";
@@ -16,13 +20,17 @@ public final class ApplicationTest {
     private final PipedInputStream outStream = new PipedInputStream();
     private final BufferedReader outReader = new BufferedReader(new InputStreamReader(outStream));
 
+    private final TaskRepository repository = new InMemoryTaskRepository();
+
     private Thread applicationThread;
 
     public ApplicationTest() throws IOException {
         BufferedReader in = new BufferedReader(new InputStreamReader(new PipedInputStream(inStream)));
         PrintWriter out = new PrintWriter(new PipedOutputStream(outStream), true);
-        TaskList taskList = new TaskList(in, out);
-        applicationThread = new Thread(taskList);
+
+        TaskService service = new TaskService(repository);
+        TaskCLI cli = new TaskCLI(service,in, out);
+        applicationThread = new Thread(cli);
     }
 
     @BeforeEach
