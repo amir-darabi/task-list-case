@@ -39,5 +39,25 @@ public class TaskController {
         return projects;
     }
 
+    // Post /projects/{projectId}/tasks
+    @PostMapping("/{projectId}/tasks")
+    public ResponseEntity<Void> createTask(
+        @PathVariable String projectId, //projectName is used as ID
+        @RequestBody CreateTaskRequest request
+    ) {
+       String description = request == null ? null : request.description();
+
+       if(description == null || description.isBlank()) {
+           log.info("POST /projects/{}/tasks -> 400 (missing/blank description)", projectId);
+           return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+       }
+
+        log.info("POST /projects/{}/tasks description={}", projectId, description);
+        service.addTask(projectId, description);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+
     public record CreateProjectRequest(String name) {}
+    public record CreateTaskRequest(String description) {}
 }
