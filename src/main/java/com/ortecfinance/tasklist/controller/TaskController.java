@@ -30,35 +30,53 @@ public class TaskController {
     // POST /projects
     @PostMapping
     public ResponseEntity<Void> createProject(@RequestBody CreateProjectRequest request) {
-        log.info("POST /projects name={}", request == null ? null : request.name());
-        service.addProject(request.name());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        String name = request == null ? null : request.name();
+        log.info("POST /projects name={}", name);
+
+        if (name == null || name.isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        try {
+            service.addProject(name);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (IllegalArgumentException e) {
+            log.info("POST /projects -> 400 ({})", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
     // GET /projects
     @GetMapping
     public Map<String, List<Task>> getProjects() {
-        var projects = service.getAllProjectsWithTasks();
+        Map<String, List<Task>> projects = service.getAllProjectsWithTasks();
         log.info("GET /projects -> {} project(s)", projects.size());
         return projects;
     }
 
-    // Post /projects/{projectId}/tasks
+    // POST /projects/{projectId}/tasks
+    // projectId is currently the project *name* (projects are stored by name in memory).
     @PostMapping("/{projectId}/tasks")
     public ResponseEntity<Void> createTask(
-        @PathVariable String projectId, //projectName is used as ID
-        @RequestBody CreateTaskRequest request
+            @PathVariable String projectId,
+            @RequestBody CreateTaskRequest request
     ) {
-       String description = request == null ? null : request.description();
+        String description = request == null ? null : request.description();
 
-       if(description == null || description.isBlank()) {
-           log.info("POST /projects/{}/tasks -> 400 (missing/blank description)", projectId);
-           return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-       }
+        if (description == null || description.isBlank()) {
+            log.info("POST /projects/{}/tasks -> 400 (missing/blank description)", projectId);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
 
         log.info("POST /projects/{}/tasks description={}", projectId, description);
-        service.addTask(projectId, description);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+
+        try {
+            service.addTask(projectId, description);
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        } catch (IllegalArgumentException e) {
+            log.info("POST /projects/{}/tasks -> 404/400 ({})", projectId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     // PUT /projects/{projectId}/tasks/{taskId}?deadline=dd-MM-yyyy
@@ -80,7 +98,7 @@ public class TaskController {
     // GET /projects/view_by_deadline
     @GetMapping("/view_by_deadline")
     public TaskService.DeadlineView viewByDeadline() {
-        var view = service.getTasksByDeadline();
+        TaskService.DeadlineView view = service.getTasksByDeadline();
         log.info("GET /projects/view_by_deadline");
         return view;
     }
